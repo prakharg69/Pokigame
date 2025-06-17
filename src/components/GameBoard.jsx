@@ -25,9 +25,10 @@ function GameBoard({ gameState, setGameState }) {
     try {
       setIsSearching(true);
       setSearchError("");
-      const response = await fetch(
-        `https://pokeapi.co/api/v2/pokemon/${searchTerm.toLowerCase()}`
-      );
+     const response = await fetch(
+  `${import.meta.env.VITE_POKI_API}/pokemon/${searchTerm.toLowerCase()}`
+);
+
 
       if (!response.ok) {
         throw new Error("pokemon not found");
