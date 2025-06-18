@@ -4,19 +4,41 @@ import { useRef } from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-
 function GameBoard({ gameState, setGameState }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchError, setSearchError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [highlightedStats, setHighlightedStats] = useState({});
+  const [allPokemon, setAllPokemon] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+
   const com = useRef(0);
-  const navigate= useNavigate();
+  const navigate = useNavigate();
   useEffect(() => {
-  if (gameState.status === "finished") {
-    navigate('/finished');
-  }
-}, [gameState.status]);
+    if (gameState.status === "finished") {
+      navigate("/finished");
+    }
+  }, [gameState.status]);
+
+  useEffect(() => {
+    const fetchAllPokemon = async () => {
+      const res = await fetch(import.meta.env.VITE_POKEMON_API_URL);
+
+      const data = await res.json();
+      setAllPokemon(data.results.map((p) => p.name));
+    };
+    fetchAllPokemon();
+  }, []);
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      const filtered = allPokemon.filter((name) =>
+        name.toLowerCase().startsWith(searchTerm.toLowerCase())
+      );
+      setSuggestions(filtered.slice(0, 5));
+    } else {
+      setSuggestions([]);
+    }
+  }, [searchTerm, allPokemon]);
 
   const searchPokemon = async () => {
     if (!searchTerm.trim()) {
@@ -25,10 +47,9 @@ function GameBoard({ gameState, setGameState }) {
     try {
       setIsSearching(true);
       setSearchError("");
-     const response = await fetch(
-  `${import.meta.env.VITE_POKI_API}/pokemon/${searchTerm.toLowerCase()}`
-);
-
+      const response = await fetch(
+        `${import.meta.env.VITE_POKI_API}/pokemon/${searchTerm.toLowerCase()}`
+      );
 
       if (!response.ok) {
         throw new Error("pokemon not found");
@@ -80,13 +101,11 @@ function GameBoard({ gameState, setGameState }) {
     }
   };
   const compareStats = () => {
-
     com.current += 1;
-  if (com.current > 1) {
-    return;
-  }
+    if (com.current > 1) {
+      return;
+    }
 
-    
     const stats = [
       "hp",
       "attack",
@@ -206,6 +225,22 @@ function GameBoard({ gameState, setGameState }) {
                 {isSearching ? "Searching..." : "Search"}
               </button>
             </div>
+            {suggestions.length > 0 && (
+              <ul className=" mt-1  bg-white/70 backdrop-blur-md border border-purple-200 rounded-xl shadow-xl divide-y divide-purple-100">
+                {suggestions.map((name) => (
+                  <li
+                    key={name}
+                    onClick={() => {
+                      setSearchTerm(name);
+                      setSuggestions([]);
+                    }}
+                    className="px-4 py-3 cursor-pointer hover:bg-gradient-to-r hover:from-purple-100 hover:to-pink-100 transition-all duration-200 text-gray-800 capitalize"
+                  >
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            )}
 
             {searchError && <p className="text-red-500 mb-4">{searchError}</p>}
 
